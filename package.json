@@ -2,9 +2,9 @@
   "name": "mix-pin",
   "version": "1.0.0",
   "description": "Automatically pins IPFS files as they are published on MIX.",
-  "main": "index.js",
+  "main": "backend.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodejs backend.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/mix-blockchain/mix-pin/issues"
   },
-  "homepage": "https://github.com/mix-blockchain/mix-pin#readme"
+  "homepage": "https://github.com/mix-blockchain/mix-pin#readme",
+  "dependencies": {
+    "web3": "^0.20.3"
+  }
 }
