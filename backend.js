@@ -11,11 +11,18 @@ const itemStoreIpfsSha256 = itemStoreIpfsSha256Factory.at(itemStoreIpfsSha256Add
 const eventPublishRevision = "0xa42468235cfdba0d7adbc48b79ee2a88f02cf52f20de70c669aaad7fd3e21585";
 
 const multihashes = require('multihashes');
+const request = require('request');
 
 web3.eth.filter({fromBlock: 0, toBlock: 'pending', address: itemStoreIpfsSha256Address, topics: [eventPublishRevision]}).watch(function(error, result) {
   if (error) { callback(error); return; }
   const ipfsHash = result.data.substr(66, 64);
   const base58IpfsHash = multihashes.toB58String(multihashes.encode(Buffer.from(ipfsHash, "hex"), 'sha2-256'));
-  console.log(base58IpfsHash);
-});
 
+  request
+    .get('http://127.0.0.1:5001/api/v0/pin/add?arg=/ipfs/' + base58IpfsHash)
+    .on('response', function(response) {
+      if (response.statusCode == 200) {
+        console.log(base58IpfsHash);
+      }
+    })
+});

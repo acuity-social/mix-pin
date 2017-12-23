@@ -18,6 +18,7 @@
   "homepage": "https://github.com/mix-blockchain/mix-pin#readme",
   "dependencies": {
     "multihashes": "^0.4.12",
+    "request": "^2.83.0",
     "web3": "^0.20.3"
   }
 }
