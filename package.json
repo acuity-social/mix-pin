@@ -1,0 +1,19 @@
+{
+  "name": "mix-pin",
+  "version": "1.0.0",
+  "description": "Automatically pins IPFS files as they are published on MIX.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mix-blockchain/mix-pin.git"
+  },
+  "author": "Jonathan Brown <jbrown@mix-blockchain.org>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mix-blockchain/mix-pin/issues"
+  },
+  "homepage": "https://github.com/mix-blockchain/mix-pin#readme"
+}
