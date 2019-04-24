@@ -31,8 +31,9 @@ function connect() {
 	]
 
 	bootnodes.forEach(async bootnode => {
-		let response = await axios.get('http://127.0.0.1:5001/api/v0/swarm/connect?arg=' + bootnode)
-		console.log(bootnode, response.statusText)
+		try {
+			axios.get('http://127.0.0.1:5001/api/v0/swarm/connect?arg=' + bootnode)
+		} catch (e) {}
 	})
 }
 
