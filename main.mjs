@@ -65,7 +65,7 @@ async function pinIpfsHash(ipfsHash) {
 }
 
 async function start() {
-	let parityIpcPath = process.env['HOME'] + '/.config/Acuity/parity.ipc'
+	let parityIpcPath = process.env['HOME'] + '/.local/share/io.parity.ethereum/jsonrpc.ipc'
 	let web3 = new Web3(new Web3.providers.IpcProvider(parityIpcPath, net))
 
 	let blockNumber = await web3.eth.getBlockNumber()
