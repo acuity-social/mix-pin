@@ -38,14 +38,13 @@ async function start() {
 	let parityIpcPath = process.env['HOME'] + '/.local/share/io.parity.ethereum/jsonrpc.ipc'
 
 	let web3 = new Web3(new Web3.providers.IpcProvider(parityIpcPath, net))
-	web3.eth.defaultBlock = 'pending';
 
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block: ' + blockNumber.toLocaleString())
 
 	let itemStoreIpfsSha256 = new web3.eth.Contract(ItemStoreIpfsSha256Abi, '0x1c12e8667bd48f87263e0745d7b28ea18f74ac0e')
 	itemStoreIpfsSha256.events.PublishRevision({
-		fromBlock: 0,
+//		fromBlock: 0,
 		toBlock: 'pending',
 	})
 	.on('data', event => {
