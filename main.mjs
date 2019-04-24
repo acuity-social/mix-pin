@@ -14,6 +14,7 @@ async function pinIpfsHash(ipfsHash) {
 		console.log(encodedIpfsHash)
 		await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
 		let response = await axios.get('http://127.0.0.1:5001/api/v0/cat?arg=/ipfs/' + encodedIpfsHash)
+		console.log(response.status)
 		let itemPayload = await brotli.decompress(Buffer.from(response.data, "binary"))
 		let mixins = itemProto.Item.deserializeBinary(itemPayload).getMixinList()
 		for (let i = 0; i < mixins.length; i++) {
@@ -30,7 +31,7 @@ async function pinIpfsHash(ipfsHash) {
 				}
       }
     }
-	} catch (e) {}
+	} catch (e) {console.log(e)}
 }
 
 async function start() {
