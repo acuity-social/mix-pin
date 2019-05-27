@@ -7,6 +7,7 @@ import axios from 'axios'
 import brotli from 'iltorb'
 import itemProto from './item_pb.js'
 import jpegImageProto from './jpeg-image_pb.js'
+import fileProto from './file_pb.js'
 
 let ipfsInterval
 
@@ -48,6 +49,7 @@ async function pinIpfsHash(ipfsHash) {
 		let mixins = itemProto.Item.deserializeBinary(itemPayload).getMixinList()
 		for (let i = 0; i < mixins.length; i++) {
       let mixinId = '0x' + ('00000000' + mixins[i].getMixinId().toString(16)).slice(-8)
+			// Pin images.
 			if (mixinId == '0x12745469') {
 				let imageMessage = new jpegImageProto.JpegMipmap.deserializeBinary(mixins[i].getPayload())
 				let mipmapList = imageMessage.getMipmapLevelList()
@@ -56,11 +58,18 @@ async function pinIpfsHash(ipfsHash) {
 				mipmapList.forEach(async mipmap => {
 					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
 					console.log(encodedIpfsHash)
-					axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
-					let response = await axios.get('http://127.0.0.1:5001/api/v0/cat?arg=/ipfs/' + encodedIpfsHash)
+					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
 					console.log(encodedIpfsHash, response.status)
 				})
       }
+			// Pin files.
+			else if (mixinId == '0x0b62637e') {
+      let fileMessage = new fileProto.File.deserializeBinary(mixins[i].getPayload())
+	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
+				console.log(encodedIpfsHash)
+				let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
+				console.log(encodedIpfsHash, response.status)
+	    }
     }
 	} catch (e) {console.log(e)}
 }
