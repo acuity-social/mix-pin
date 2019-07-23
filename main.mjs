@@ -1,13 +1,13 @@
 import Web3 from 'web3'
 import net from 'net'
-import ItemStoreIpfsSha256Abi from './ItemStoreIpfsSha256.abi.json'
+import MixItemStoreIpfsSha256Abi from './MixItemStoreIpfsSha256.abi.json'
 import multihashes from 'multihashes'
 import Base58 from 'base-58'
 import axios from 'axios'
 import brotli from 'iltorb'
-import itemProto from './item_pb.js'
-import jpegImageProto from './jpeg-image_pb.js'
-import fileProto from './file_pb.js'
+import ItemProto from './Item_pb.js'
+import ImageMixinProto from './ImageMixin_pb.js'
+import FileMixinProto from './FileMixin_pb.js'
 
 let ipfsInterval
 
@@ -46,12 +46,12 @@ async function pinIpfsHash(ipfsHash) {
 		let response = await axios.get('http://127.0.0.1:5001/api/v0/cat?arg=/ipfs/' + encodedIpfsHash)
 		console.log(encodedIpfsHash, response.status)
 		let itemPayload = await brotli.decompress(Buffer.from(response.data, "binary"))
-		let mixins = itemProto.Item.deserializeBinary(itemPayload).getMixinList()
+		let mixins = ItemProto.Item.deserializeBinary(itemPayload).getMixinPayloadList()
 		for (let i = 0; i < mixins.length; i++) {
       let mixinId = '0x' + ('00000000' + mixins[i].getMixinId().toString(16)).slice(-8)
 			// Pin images.
-			if (mixinId == '0x12745469') {
-				let imageMessage = new jpegImageProto.JpegMipmap.deserializeBinary(mixins[i].getPayload())
+			if (mixinId == '0x045eee8c') {
+				let imageMessage = new ImageMixinProto.ImageMixin.deserializeBinary(mixins[i].getPayload())
 				let mipmapList = imageMessage.getMipmapLevelList()
 				console.log(mipmapList.length)
 
@@ -63,8 +63,8 @@ async function pinIpfsHash(ipfsHash) {
 				})
       }
 			// Pin files.
-			else if (mixinId == '0x0b62637e') {
-      let fileMessage = new fileProto.File.deserializeBinary(mixins[i].getPayload())
+			else if (mixinId == '0x3c5bba9c') {
+      	let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
 	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
 				console.log(encodedIpfsHash)
 				let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
@@ -81,13 +81,17 @@ async function start() {
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block: ' + blockNumber.toLocaleString())
 
-	let itemStoreIpfsSha256 = new web3.eth.Contract(ItemStoreIpfsSha256Abi, '0x1c12e8667bd48f87263e0745d7b28ea18f74ac0e')
+	let itemStoreIpfsSha256 = new web3.eth.Contract(MixItemStoreIpfsSha256Abi, '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
 //		fromBlock: 0,
 		toBlock: 'pending',
 	})
-	.on('data', event => {
-		pinIpfsHash(event.returnValues.ipfsHash)
+	.on('data', async event => {
+		let item = await itemStoreIpfsSha256.methods.getItem(event.returnValues.itemId).call()
+
+		for (let ipfsHash of item.ipfsHashes) {
+			pinIpfsHash(ipfsHash)
+		}
 	})
 
 	ipfsInterval = setInterval(connect, 30000)
