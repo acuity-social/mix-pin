@@ -1,6 +1,5 @@
 import Web3 from 'web3'
 import net from 'net'
-import MixItemStoreIpfsSha256Abi from './MixItemStoreIpfsSha256.abi.json'
 import multihashes from 'multihashes'
 import Base58 from 'base-58'
 import axios from 'axios'
@@ -9,6 +8,7 @@ import ItemProto from './Item_pb.js'
 import ImageMixinProto from './ImageMixin_pb.js'
 import FileMixinProto from './FileMixin_pb.js'
 
+let MixItemStoreIpfsSha256Abi = require('./MixItemStoreIpfsSha256.abi.json')
 let ipfsInterval
 
 function connect() {
