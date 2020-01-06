@@ -2,13 +2,12 @@
   "name": "mix-pin",
   "version": "2.0.0",
   "description": "Automatically pins IPFS files as they are published on MIX.",
-  "main": "main.mjs",
   "repository": "git@github.com:mix-blockchain/mix-pin.git",
   "author": "Jonathan Brown <jbrown@mix-blockchain.org>",
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "node --experimental-modules main.mjs"
+    "start": "ts-node src/main.ts"
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -17,5 +16,9 @@
     "iltorb": "^2.4.2",
     "multihashes": "^0.4.14",
     "web3": "^1.0.0-beta.52"
+  },
+  "devDependencies": {
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.4"
   }
 }

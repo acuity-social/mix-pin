@@ -1,6 +1,5 @@
 import Web3 from 'web3'
 import net from 'net'
-import MixItemStoreIpfsSha256Abi from './MixItemStoreIpfsSha256.abi.json'
 import multihashes from 'multihashes'
 import Base58 from 'base-58'
 import axios from 'axios'
@@ -81,7 +80,7 @@ async function start() {
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block: ' + blockNumber.toLocaleString())
 
-	let itemStoreIpfsSha256 = new web3.eth.Contract(MixItemStoreIpfsSha256Abi, '0x26b10bb026700148962c4a948b08ae162d18c0af')
+	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'), '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
 		fromBlock: 5600000,
 		toBlock: 'pending',
