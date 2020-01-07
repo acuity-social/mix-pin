@@ -55,7 +55,7 @@ async function pinIpfsHash(ipfsHash) {
           let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
   	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
   				console.log(encodedIpfsHash)
-  				let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  				let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
   				console.log(encodedIpfsHash, response.status)
           break
 
@@ -67,7 +67,7 @@ async function pinIpfsHash(ipfsHash) {
   				mipmapList.forEach(async mipmap => {
   					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
   					console.log(encodedIpfsHash)
-  					let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
   				})
           break
@@ -80,7 +80,7 @@ async function pinIpfsHash(ipfsHash) {
   				encodingList.forEach(async encoding => {
   					let encodedIpfsHash = Base58.encode(encoding.getIpfsHash())
   					console.log(encodedIpfsHash)
-  					let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
   				})
           break
