@@ -1,5 +1,4 @@
 #!/bin/bash
 source /usr/share/nvm/init-nvm.sh
-nvm use 10
+nvm use 13
 yarn start
-
