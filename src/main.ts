@@ -5,8 +5,9 @@ import Base58 from 'base-58'
 import axios from 'axios'
 import brotli from 'iltorb'
 import ItemProto from './Item_pb.js'
-import ImageMixinProto from './ImageMixin_pb.js'
 import FileMixinProto from './FileMixin_pb.js'
+import ImageMixinProto from './ImageMixin_pb.js'
+import VideoMixinProto from './VideoMixin_pb.js'
 
 let ipfsInterval
 
@@ -48,27 +49,42 @@ async function pinIpfsHash(ipfsHash) {
 		let mixins = ItemProto.Item.deserializeBinary(itemPayload).getMixinPayloadList()
 		for (let i = 0; i < mixins.length; i++) {
       let mixinId = '0x' + ('00000000' + mixins[i].getMixinId().toString(16)).slice(-8)
-			// Pin images.
-			if (mixinId == '0x045eee8c') {
-				let imageMessage = new ImageMixinProto.ImageMixin.deserializeBinary(mixins[i].getPayload())
-				let mipmapList = imageMessage.getMipmapLevelList()
-				console.log(mipmapList.length)
 
-				mipmapList.forEach(async mipmap => {
-					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
-					console.log(encodedIpfsHash)
-					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
-					console.log(encodedIpfsHash, response.status)
-				})
+      switch (mixinId) {
+        case '0x3c5bba9c':  // file
+          let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
+  	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
+  				console.log(encodedIpfsHash)
+  				let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  				console.log(encodedIpfsHash, response.status)
+          break
+
+        case '0x045eee8c':  // image
+  				let imageMessage = new ImageMixinProto.ImageMixin.deserializeBinary(mixins[i].getPayload())
+  				let mipmapList = imageMessage.getMipmapLevelList()
+  				console.log('Image mipmaps:', mipmapList.length)
+
+  				mipmapList.forEach(async mipmap => {
+  					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
+  					console.log(encodedIpfsHash)
+  					let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  					console.log(encodedIpfsHash, response.status)
+  				})
+          break
+
+        case '0x51108feb':  // video
+          let videoMessage = new VideoMixinProto.VideoMixin.deserializeBinary(mixins[i].getPayload())
+          let encodingList = videoMessage.getEncodingList()
+          console.log('Video encodings:', encodingList.length)
+
+  				encodingList.forEach(async encoding => {
+  					let encodedIpfsHash = Base58.encode(encoding.getIpfsHash())
+  					console.log(encodedIpfsHash)
+  					let response = await axios.get('http://127.0.0.1:5101/api/v0/pin/add?arg=' + encodedIpfsHash)
+  					console.log(encodedIpfsHash, response.status)
+  				})
+          break
       }
-			// Pin files.
-			else if (mixinId == '0x3c5bba9c') {
-      	let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
-	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
-				console.log(encodedIpfsHash)
-				let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
-				console.log(encodedIpfsHash, response.status)
-	    }
     }
 	} catch (e) {console.log(e)}
 }
