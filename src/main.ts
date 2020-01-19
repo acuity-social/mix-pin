@@ -94,11 +94,11 @@ async function start() {
 	let web3 = new Web3(new Web3.providers.IpcProvider(parityIpcPath, net))
 
 	let blockNumber = await web3.eth.getBlockNumber()
-	console.log('Block: ' + blockNumber.toLocaleString())
+	console.log('Block:', blockNumber.toLocaleString())
 
 	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'), '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
-		fromBlock: 5600000,
+		fromBlock: 5900000,
 		toBlock: 'pending',
 	})
 	.on('data', async event => {
