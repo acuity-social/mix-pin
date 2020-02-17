@@ -135,7 +135,7 @@ async function start() {
 
 	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'), '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
-		fromBlock: 5900000,
+		fromBlock: 6100000,
 		toBlock: 'pending',
 	})
 	.on('data', async event => {
