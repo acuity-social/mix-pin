@@ -103,7 +103,7 @@ async function pinIpfsHash(ipfsHash) {
           let videoMessage = new VideoMixinProto.VideoMixin.deserializeBinary(mixins[i].getPayload())
           let encodingList = videoMessage.getEncodingList()
           console.log('Video encodings:', encodingList.length)
-
+/*
   				encodingList.forEach(async encoding => {
   					let encodedIpfsHash = Base58.encode(encoding.getIpfsHash())
   					console.log(encodedIpfsHash)
@@ -111,6 +111,7 @@ async function pinIpfsHash(ipfsHash) {
   					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
   				})
+*/
           break
       }
     }
