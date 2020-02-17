@@ -1,3 +1,7 @@
+import levelup from 'levelup'
+import leveldown from 'leveldown'
+import sublevel from 'subleveldown'
+import lexint from 'lexicographic-integer-encoding'
 import Web3 from 'web3'
 import net from 'net'
 import multihashes from 'multihashes'
@@ -8,8 +12,16 @@ import ItemProto from './Item_pb.js'
 import FileMixinProto from './FileMixin_pb.js'
 import ImageMixinProto from './ImageMixin_pb.js'
 import VideoMixinProto from './VideoMixin_pb.js'
+import { Mutex, MutexInterface } from 'async-mutex'
 
+let db
+let dbEviction
 let ipfsInterval
+let mutex: MutexInterface = new Mutex()
+
+function ipfsGet(command: string) {
+  return axios.get('http://localhost:' + process.env.IPFS_PORT! + '/api/v0/' + command)
+}
 
 function connect() {
 	let bootnodes = [
@@ -33,17 +45,36 @@ function connect() {
 
 	bootnodes.forEach(async bootnode => {
 		try {
-			await axios.get('http://127.0.0.1:5001/api/v0/swarm/connect?arg=' + bootnode)
+			await ipfsGet('swarm/connect?arg=' + bootnode)
 		} catch (e) {}
 	})
+}
+
+function storeEvictionIpfsHash(ipfsHash: string) {
+  return new Promise(async (resolve, reject) => {
+    let release = await mutex.acquire()
+    let id: number = 0
+    dbEviction.createKeyStream({
+      reverse: true,
+      limit: 1,
+    })
+    .on('data', (key: number) => {
+      id = key + 1
+    })
+    .on('end', async () => {
+      await dbEviction.put(id, ipfsHash)
+      release()
+      resolve()
+    })
+  })
 }
 
 async function pinIpfsHash(ipfsHash) {
 	try {
 		let encodedIpfsHash = multihashes.toB58String(multihashes.encode(Buffer.from(ipfsHash.substr(2), "hex"), 'sha2-256'))
 		console.log(encodedIpfsHash)
-		axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
-		let response = await axios.get('http://127.0.0.1:5001/api/v0/cat?arg=/ipfs/' + encodedIpfsHash)
+		ipfsGet('pin/add?arg=' + encodedIpfsHash)
+		let response = await ipfsGet('cat?arg=/ipfs/' + encodedIpfsHash)
 		console.log(encodedIpfsHash, response.status)
 		let itemPayload = await brotli.decompress(Buffer.from(response.data, "binary"))
 		let mixins = ItemProto.Item.deserializeBinary(itemPayload).getMixinPayloadList()
@@ -55,7 +86,7 @@ async function pinIpfsHash(ipfsHash) {
           let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
   	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
   				console.log(encodedIpfsHash)
-  				let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
+  				let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   				console.log(encodedIpfsHash, response.status)
           break
 
@@ -67,7 +98,7 @@ async function pinIpfsHash(ipfsHash) {
   				mipmapList.forEach(async mipmap => {
   					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
   					console.log(encodedIpfsHash)
-  					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
+  					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
   				})
           break
@@ -80,7 +111,8 @@ async function pinIpfsHash(ipfsHash) {
   				encodingList.forEach(async encoding => {
   					let encodedIpfsHash = Base58.encode(encoding.getIpfsHash())
   					console.log(encodedIpfsHash)
-  					let response = await axios.get('http://127.0.0.1:5001/api/v0/pin/add?arg=' + encodedIpfsHash)
+            await storeEvictionIpfsHash(encodedIpfsHash)
+  					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
   				})
           break
@@ -90,8 +122,13 @@ async function pinIpfsHash(ipfsHash) {
 }
 
 async function start() {
-	let parityIpcPath = process.env['HOME'] + '/.local/share/io.parity.ethereum/jsonrpc.ipc'
-	let web3 = new Web3(new Web3.providers.IpcProvider(parityIpcPath, net))
+  db = levelup(leveldown('db'))
+  dbEviction = sublevel(db, 'eviction', {
+    keyEncoding: lexint('hex', {strict: true}),
+    valueEncoding: 'ascii',
+  })
+
+  let web3 = new Web3(new Web3.providers.IpcProvider(process.env.MIX_IPC_PATH!, net))
 
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block:', blockNumber.toLocaleString())

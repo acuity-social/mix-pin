@@ -7,18 +7,21 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "ts-node src/main.ts"
+    "start": "ts-node -r dotenv/config src/main.ts"
   },
   "dependencies": {
     "@types/leveldown": "^4.0.2",
     "@types/levelup": "^4.3.0",
     "@types/subleveldown": "^4.1.0",
+    "async-mutex": "^0.1.4",
     "axios": "^0.18.0",
     "base-58": "^0.0.1",
+    "dotenv": "^8.2.0",
     "google-protobuf": "^3.7.1",
     "iltorb": "^2.4.2",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",
+    "lexicographic-integer-encoding": "^1.0.1",
     "multihashes": "^0.4.14",
     "subleveldown": "^4.1.4",
     "web3": "^1.2.6"
