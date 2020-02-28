@@ -5,7 +5,7 @@ import lexint from 'lexicographic-integer-encoding'
 import Web3 from 'web3'
 import net from 'net'
 import multihashes from 'multihashes'
-import Base58 from 'base-58'
+import bs58 from 'bs58'
 import axios from 'axios'
 import brotli from 'iltorb'
 import ItemProto from './Item_pb.js'
@@ -18,6 +18,7 @@ let db
 let dbEviction
 let ipfsInterval
 let mutex: MutexInterface = new Mutex()
+let pinVideoAccounts: string[]
 
 function ipfsGet(command: string) {
   return axios.get('http://localhost:' + process.env.IPFS_PORT! + '/api/v0/' + command)
@@ -65,7 +66,7 @@ function storeEvictionIpfsHash(ipfsHash: string) {
   })
 }
 
-async function pinIpfsHash(ipfsHash) {
+async function pinIpfsHash(ipfsHash: string, owner: string) {
 	try {
 		let encodedIpfsHash = multihashes.toB58String(multihashes.encode(Buffer.from(ipfsHash.substr(2), "hex"), 'sha2-256'))
 		console.log(encodedIpfsHash)
@@ -80,7 +81,7 @@ async function pinIpfsHash(ipfsHash) {
       switch (mixinId) {
         case '0x3c5bba9c':  // file
           let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
-  	      let encodedIpfsHash = Base58.encode(fileMessage.getIpfsHash())
+  	      let encodedIpfsHash = bs58.encode(Buffer.from(fileMessage.getIpfsHash()))
   				console.log(encodedIpfsHash)
   				let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   				console.log(encodedIpfsHash, response.status)
@@ -92,7 +93,7 @@ async function pinIpfsHash(ipfsHash) {
   				console.log('Image mipmaps:', mipmapList.length)
 
   				mipmapList.forEach(async mipmap => {
-  					let encodedIpfsHash = Base58.encode(mipmap.getIpfsHash())
+  					let encodedIpfsHash = bs58.encode(Buffer.from(mipmap.getIpfsHash()))
   					console.log(encodedIpfsHash)
   					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
   					console.log(encodedIpfsHash, response.status)
@@ -100,18 +101,20 @@ async function pinIpfsHash(ipfsHash) {
           break
 
         case '0x51108feb':  // video
-          let videoMessage = new VideoMixinProto.VideoMixin.deserializeBinary(mixins[i].getPayload())
-          let encodingList = videoMessage.getEncodingList()
-          console.log('Video encodings:', encodingList.length)
-/*
-  				encodingList.forEach(async encoding => {
-  					let encodedIpfsHash = Base58.encode(encoding.getIpfsHash())
-  					console.log(encodedIpfsHash)
-            await storeEvictionIpfsHash(encodedIpfsHash)
-  					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
-  					console.log(encodedIpfsHash, response.status)
-  				})
-*/
+          if (pinVideoAccounts.includes(owner)) {
+            let videoMessage = new VideoMixinProto.VideoMixin.deserializeBinary(mixins[i].getPayload())
+            let encodingList = videoMessage.getEncodingList()
+            console.log('Video encodings:', encodingList.length)
+
+    				encodingList.forEach(async encoding => {
+    					let encodedIpfsHash = bs58.encode(Buffer.from(encoding.getIpfsHash()))
+    					console.log(encodedIpfsHash)
+              await storeEvictionIpfsHash(encodedIpfsHash)
+    					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
+    					console.log(encodedIpfsHash, response.status)
+    				})
+          }
+
           break
       }
     }
@@ -124,6 +127,9 @@ async function start() {
     keyEncoding: lexint('hex', {strict: true}),
     valueEncoding: 'ascii',
   })
+
+  pinVideoAccounts = process.env.PIN_VIDEO_ACCOUNTS!.split(',')
+  console.log('Pin video accounts:', pinVideoAccounts)
 
   let web3 = new Web3(new Web3.providers.IpcProvider(process.env.MIX_IPC_PATH!, net))
 
@@ -139,7 +145,7 @@ async function start() {
 		let item = await itemStoreIpfsSha256.methods.getItem(event.returnValues.itemId).call()
 
 		for (let ipfsHash of item.ipfsHashes) {
-			pinIpfsHash(ipfsHash)
+			pinIpfsHash(ipfsHash, item.owner)
 		}
 	})
 
