@@ -14,6 +14,7 @@ import ImageMixinProto from './ImageMixin_pb.js'
 import VideoMixinProto from './VideoMixin_pb.js'
 import { Mutex, MutexInterface } from 'async-mutex'
 
+let web3
 let db
 let dbEviction
 let ipfsInterval
@@ -155,8 +156,7 @@ async function start() {
   pinVideoAccounts = process.env.PIN_VIDEO_ACCOUNTS!.split(',')
   console.log('Pin video accounts:', pinVideoAccounts)
 
-  let web3
-
+  console.log('Waiting for MIX IPC.')
   await new Promise((resolve, reject) => {
     let intervalId = setInterval(async () => {
       try {
@@ -172,7 +172,20 @@ async function start() {
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block:', blockNumber.toLocaleString())
 
-	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'), '0x26b10bb026700148962c4a948b08ae162d18c0af')
+  console.log('Waiting for IPFS RPC.')
+  await new Promise((resolve, reject) => {
+    let intervalId = setInterval(async () => {
+      try {
+        await ipfsGet('id')
+        clearInterval(intervalId)
+        resolve()
+      }
+      catch (e) {}
+    }, 1000)
+  })
+
+	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'),
+  '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
 		fromBlock: 6100000,
 		toBlock: 'pending',
