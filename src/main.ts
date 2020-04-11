@@ -184,10 +184,19 @@ async function start() {
     }, 1000)
   })
 
+  let fromBlock: number
+  try {
+    fromBlock = parseInt(await db.get('lastBlock')) - 604800 // 1 week
+  }
+  catch (e) {
+    fromBlock = 0
+  }
+  console.log('fromBlock:', fromBlock.toLocaleString())
+
 	let itemStoreIpfsSha256 = new web3.eth.Contract(require('./MixItemStoreIpfsSha256.abi.json'),
   '0x26b10bb026700148962c4a948b08ae162d18c0af')
 	itemStoreIpfsSha256.events.PublishRevision({
-		fromBlock: 6100000,
+		fromBlock: fromBlock,
 		toBlock: 'pending',
 	})
 	.on('data', async event => {
@@ -196,6 +205,8 @@ async function start() {
 		for (let ipfsHash of item.ipfsHashes) {
 			pinIpfsHash(ipfsHash, item.owner)
 		}
+
+    db.put('lastBlock', event.blockNumber)
 	})
 
 	ipfsInterval = setInterval(connect, 30000)
