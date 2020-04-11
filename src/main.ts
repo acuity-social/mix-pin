@@ -30,7 +30,7 @@ function ipfsGet(command: string, json: boolean = true): Promise<any> {
     let options = {
       agent: agent,
       path: '/api/v0/' + command,
-      port: 5101,
+      port: process.env.IPFS_PORT!,
     }
 
     http.get(options)
