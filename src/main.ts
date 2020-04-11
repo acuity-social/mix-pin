@@ -7,7 +7,7 @@ import net from 'net'
 import multihashes from 'multihashes'
 import bs58 from 'bs58'
 import axios from 'axios'
-import brotli from 'iltorb'
+import { brotliDecompressSync } from 'zlib'
 import ItemProto from './Item_pb.js'
 import FileMixinProto from './FileMixin_pb.js'
 import ImageMixinProto from './ImageMixin_pb.js'
@@ -73,7 +73,7 @@ async function pinIpfsHash(ipfsHash: string, owner: string) {
 		ipfsGet('pin/add?arg=' + encodedIpfsHash)
 		let response = await ipfsGet('cat?arg=/ipfs/' + encodedIpfsHash)
 		console.log(encodedIpfsHash, response.status)
-		let itemPayload = await brotli.decompress(Buffer.from(response.data, "binary"))
+		let itemPayload = brotliDecompressSync(Buffer.from(response.data, "binary"))
 		let mixins = ItemProto.Item.deserializeBinary(itemPayload).getMixinPayloadList()
 		for (let i = 0; i < mixins.length; i++) {
       let mixinId = '0x' + ('00000000' + mixins[i].getMixinId().toString(16)).slice(-8)
