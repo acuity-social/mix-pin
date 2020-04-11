@@ -131,7 +131,19 @@ async function start() {
   pinVideoAccounts = process.env.PIN_VIDEO_ACCOUNTS!.split(',')
   console.log('Pin video accounts:', pinVideoAccounts)
 
-  let web3 = new Web3(new Web3.providers.IpcProvider(process.env.MIX_IPC_PATH!, net))
+  let web3
+
+  await new Promise((resolve, reject) => {
+    let intervalId = setInterval(async () => {
+      try {
+        web3 = new Web3(new Web3.providers.IpcProvider(process.env.MIX_IPC_PATH!, net))
+        await web3.eth.getProtocolVersion()
+        clearInterval(intervalId)
+        resolve()
+      }
+      catch (e) {}
+    }, 1000)
+  })
 
 	let blockNumber = await web3.eth.getBlockNumber()
 	console.log('Block:', blockNumber.toLocaleString())
