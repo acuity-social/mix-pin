@@ -6,7 +6,7 @@ import Web3 from 'web3'
 import net from 'net'
 import multihashes from 'multihashes'
 import bs58 from 'bs58'
-import axios from 'axios'
+import http from 'http'
 import { brotliDecompressSync } from 'zlib'
 import ItemProto from './Item_pb.js'
 import FileMixinProto from './FileMixin_pb.js'
@@ -20,8 +20,32 @@ let ipfsInterval
 let mutex: MutexInterface = new Mutex()
 let pinVideoAccounts: string[]
 
-function ipfsGet(command: string) {
-  return axios.get('http://localhost:' + process.env.IPFS_PORT! + '/api/v0/' + command)
+let agent = new http.Agent({
+  keepAlive: true,
+})
+
+function ipfsGet(command: string, json: boolean = true): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let options = {
+      agent: agent,
+      path: '/api/v0/' + command,
+      port: 5101,
+    }
+
+    http.get(options)
+    .on('response', res => {
+      let body = ''
+      res.on('data', (data: any) => {
+        body += data
+      })
+      res.on('end', () => {
+        resolve(json ? JSON.parse(body) : body)
+      })
+    })
+    .on('error', (error) => {
+      reject(error)
+    })
+  })
 }
 
 function connect() {
@@ -71,9 +95,9 @@ async function pinIpfsHash(ipfsHash: string, owner: string) {
 		let encodedIpfsHash = multihashes.toB58String(multihashes.encode(Buffer.from(ipfsHash.substr(2), "hex"), 'sha2-256'))
 		console.log(encodedIpfsHash)
 		ipfsGet('pin/add?arg=' + encodedIpfsHash)
-		let response = await ipfsGet('cat?arg=/ipfs/' + encodedIpfsHash)
-		console.log(encodedIpfsHash, response.status)
-		let itemPayload = brotliDecompressSync(Buffer.from(response.data, "binary"))
+		let data = await ipfsGet('cat?arg=/ipfs/' + encodedIpfsHash, false)
+		console.log(encodedIpfsHash, 'received')
+		let itemPayload = brotliDecompressSync(Buffer.from(data, "binary"))
 		let mixins = ItemProto.Item.deserializeBinary(itemPayload).getMixinPayloadList()
 		for (let i = 0; i < mixins.length; i++) {
       let mixinId = '0x' + ('00000000' + mixins[i].getMixinId().toString(16)).slice(-8)
@@ -83,8 +107,8 @@ async function pinIpfsHash(ipfsHash: string, owner: string) {
           let fileMessage = new FileMixinProto.FileMixin.deserializeBinary(mixins[i].getPayload())
   	      let encodedIpfsHash = bs58.encode(Buffer.from(fileMessage.getIpfsHash()))
   				console.log(encodedIpfsHash)
-  				let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
-  				console.log(encodedIpfsHash, response.status)
+  				await ipfsGet('pin/add?arg=' + encodedIpfsHash)
+  				console.log(encodedIpfsHash, 'received')
           break
 
         case '0x045eee8c':  // image
@@ -95,8 +119,8 @@ async function pinIpfsHash(ipfsHash: string, owner: string) {
   				mipmapList.forEach(async mipmap => {
   					let encodedIpfsHash = bs58.encode(Buffer.from(mipmap.getIpfsHash()))
   					console.log(encodedIpfsHash)
-  					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
-  					console.log(encodedIpfsHash, response.status)
+  					await ipfsGet('pin/add?arg=' + encodedIpfsHash)
+  					console.log(encodedIpfsHash, 'received')
   				})
           break
 
@@ -110,8 +134,8 @@ async function pinIpfsHash(ipfsHash: string, owner: string) {
     					let encodedIpfsHash = bs58.encode(Buffer.from(encoding.getIpfsHash()))
     					console.log(encodedIpfsHash)
               await storeEvictionIpfsHash(encodedIpfsHash)
-    					let response = await ipfsGet('pin/add?arg=' + encodedIpfsHash)
-    					console.log(encodedIpfsHash, response.status)
+    					await ipfsGet('pin/add?arg=' + encodedIpfsHash)
+    					console.log(encodedIpfsHash, 'received')
     				})
           }
 
