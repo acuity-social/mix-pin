@@ -196,7 +196,7 @@ async function start() {
 
   let fromBlock: number
   try {
-    fromBlock = parseInt(await db.get('lastBlock')) - 604800 // 1 week
+    fromBlock = parseInt(await db.get('lastBlock')) - 5760  // ~1 day
   }
   catch (e) {
     fromBlock = 0
