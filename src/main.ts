@@ -43,10 +43,10 @@ function ipfsGet(command: string, json: boolean = true): Promise<any> {
         resolve(json ? JSON.parse(body) : body)
       })
     })
-    .on('error', (error: any) => {
+    .on('error', async (error: any) => {
       if (req.reusedSocket && error.code === 'ECONNRESET') {
         try {
-          resolve(ipfsGet(command, json))
+          resolve(await ipfsGet(command, json))
         }
         catch (error) {
           reject(error)
