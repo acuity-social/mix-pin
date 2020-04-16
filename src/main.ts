@@ -210,13 +210,7 @@ async function start() {
 		toBlock: 'pending',
 	})
 	.on('data', async event => {
-    let item
-    try {
-		    item = await itemStoreIpfsSha256.methods.getItem(event.returnValues.itemId).call()
-    } catch (e) {
-      console.error(e)
-      process.exit(1)
-    }
+		let item = await itemStoreIpfsSha256.methods.getItem(event.returnValues.itemId).call()
 
 		for (let ipfsHash of item.ipfsHashes) {
 			pinIpfsHash(ipfsHash, item.owner)
