@@ -33,7 +33,7 @@ function ipfsGet(command: string, json: boolean = true, retry: boolean = true): 
       port: process.env.IPFS_PORT!,
     }
 
-    let req: any = http.get(options)
+    http.get(options)
     .on('response', res => {
       let body = ''
       res.on('data', (data: any) => {
@@ -44,11 +44,16 @@ function ipfsGet(command: string, json: boolean = true, retry: boolean = true): 
       })
     })
     .on('error', async (error: any) => {
-      if (error.code == 'ECONNREFUSED' && retry) {
+      if (error.code === 'ECONNREFUSED' && retry) {
         console.log('Connection refused, waiting 10 seconds.')
         setTimeout(async () => {
           console.log('Trying again.')
-          resolve(await ipfsGet(command, json))
+          try {
+            resolve(await ipfsGet(command, json))
+          }
+          catch (error) {
+            reject(error)
+          }
         }, 10000)
       }
       else if (error.code === 'ECONNRESET') {
