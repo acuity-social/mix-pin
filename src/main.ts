@@ -25,7 +25,7 @@ let agent = new http.Agent({
   keepAlive: true,
 })
 
-function ipfsGet(command: string, json: boolean = true): Promise<any> {
+function ipfsGet(command: string, json: boolean = true, exit: boolean = true): Promise<any> {
   return new Promise((resolve, reject) => {
     let options = {
       agent: agent,
@@ -44,6 +44,10 @@ function ipfsGet(command: string, json: boolean = true): Promise<any> {
       })
     })
     .on('error', async (error: any) => {
+      if (error.code == 'ECONNREFUSED' && exit) {
+        console.error(error)
+        process.exit(1)
+      }
       if (error.code === 'ECONNRESET') {
         try {
           resolve(await ipfsGet(command, json))
@@ -186,7 +190,7 @@ async function start() {
   await new Promise((resolve, reject) => {
     let intervalId = setInterval(async () => {
       try {
-        await ipfsGet('id')
+        await ipfsGet('id', true, false)
         clearInterval(intervalId)
         resolve()
       }
